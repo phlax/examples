@@ -150,6 +150,7 @@ pkg_tar(
     extension = "tar.gz",
     package_dir = "start/sandboxes",
     deps = [":examples_docs"],
+    visibility = ["//visibility:public"],
 )
 
 envoy_examples(
