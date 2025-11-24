@@ -23,6 +23,6 @@ example_repository = repository_rule(
 
 def load_envoy_nested_examples():
     example_repository(
-        name = "envoy-example-wasmcc",
+        name = "envoy_example_wasm_cc",
         path = "wasm-cc",
     )

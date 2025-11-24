@@ -10,7 +10,7 @@ load("@toolchains_llvm//toolchain:deps.bzl", "bazel_toolchain_dependencies")
 load("@toolchains_llvm//toolchain:rules.bzl", "llvm_toolchain")
 load("//bazel:versions.bzl", "VERSIONS")
 
-def resolve_envoy_example_wasmcc_dependencies(
+def resolve_envoy_example_wasm_cc_dependencies(
         cmake_version=VERSIONS["cmake"],
         llvm_version=VERSIONS["llvm"],
         ninja_version=VERSIONS["ninja"],

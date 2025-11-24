@@ -1,5 +1,5 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@envoy-example-wasmcc//bazel:archives.bzl", "load_envoy_example_wasmcc_archives")
+load("@envoy_example_wasm_cc//bazel:archives.bzl", "load_envoy_example_wasm_cc_archives")
 load("//bazel:versions.bzl", "VERSIONS")
 
 def load_github_archives():
@@ -37,4 +37,4 @@ def load_http_archives():
 def load_envoy_examples_archives():
     load_github_archives()
     load_http_archives()
-    load_envoy_example_wasmcc_archives()
+    load_envoy_example_wasm_cc_archives()

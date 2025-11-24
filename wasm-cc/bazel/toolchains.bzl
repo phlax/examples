@@ -6,7 +6,7 @@ load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_toolchains")
 load("@rules_python//python:repositories.bzl", "python_register_toolchains")
 load("//bazel:versions.bzl", "VERSIONS")
 
-def load_envoy_example_wasmcc_toolchains(go=True):
+def load_envoy_example_wasm_cc_toolchains(go=True):
     envoy_api_dependencies()
     register_emscripten_toolchains()
     python_register_toolchains(

@@ -33,11 +33,16 @@ verify () {
     chmod -R o-rwx "$RUNDIR"
     cd "$RUNDIR"
     dirlist=$(ls .)
+    # DEBUG
+    echo "DIRLIST: ${dirlist}" >&2
     if [[ "$dirlist" == "external" ]]; then
-        cd "external/envoy_examples/${EXAMPLE_NAME}"
+        cd "external/envoy_examples~/${EXAMPLE_NAME}"
     else
         cd "${EXAMPLE_NAME}"
     fi
+    # DEBUG
+    echo "PWD: ${PWD}" >&2
+    ls -alh >&2
     script -q -c "./verify.sh" "$TMPOUT" >/dev/null
 }
 

@@ -5,7 +5,7 @@ load("@envoy//bazel:repositories.bzl", "default_envoy_build_config")
 load("@rules_python//python:pip.bzl", "pip_parse")
 load("//bazel:versions.bzl", "VERSIONS")
 
-def load_envoy_example_wasmcc_packages():
+def load_envoy_example_wasm_cc_packages():
     # This is empty - it should be overridden in your repo
     pip_parse(
         name = "toolshed_pip3",

@@ -33,6 +33,6 @@ def load_http_archives():
                 formatted_kwargs[arg_k] = arg_v
         http_archive(**formatted_kwargs)
 
-def load_envoy_example_wasmcc_archives():
+def load_envoy_example_wasm_cc_archives():
     load_github_archives()
     load_http_archives()

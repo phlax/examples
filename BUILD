@@ -66,7 +66,7 @@ filegroup(
             "postgres/*",
             "kafka/*.yaml",
         ],
-    ) + ["@envoy-example-wasmcc//:configs"],
+    ) + ["@envoy_example_wasm_cc//:configs"],
     visibility = ["//visibility:public"],
 )
 
@@ -95,7 +95,7 @@ filegroup(
 
 filegroup(
     name = "docs_rst",
-    srcs = glob(["**/example.rst"]) + ["@envoy-example-wasmcc//:example.rst"],
+    srcs = glob(["**/example.rst"]) + ["@envoy_example_wasm_cc//:example.rst"],
 )
 
 pkg_files(
@@ -114,9 +114,12 @@ genrule(
     for location in $(locations :docs_rst); do
         if [[ "$$location" == *"/envoy-example"* ]]; then
             example="$$(echo "$$location" | cut -d- -f3- | cut -d/ -f1)"
+        elif [[ "$$location" == *"/envoy_example_wasm_cc~"* ]]; then
+            example="wasm-cc"
         else
             example=$$(echo $$location | sed -e 's#^external/[^/]*/##' | cut -d/ -f1)
         fi
+        echo "$$location -> $${example}.rst" >&2
         cp -aL $$location "$${TEMP}/$${example}.rst"
         echo "    $${example}" >> "$${TEMP}/_toctree.rst"
     done
@@ -162,7 +165,7 @@ pkg_tar(
     package_dir = "start/sandboxes",
     deps = [
         ":examples_docs",
-        "@envoy-example-wasmcc//:includes",
+        "@envoy_example_wasm_cc//:includes",
     ],
     visibility = ["//visibility:public"],
 )
