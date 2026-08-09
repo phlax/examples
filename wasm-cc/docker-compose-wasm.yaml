@@ -14,11 +14,12 @@ services:
       cp -af bazel-bin/*updated*.wasm /output
     environment:
     - BUILD_UID=${UID:-1000}
-    entrypoint: /source/shared/build/build-entrypoint.sh
+    entrypoint: /source/examples/shared/build/build-entrypoint.sh
     working_dir: /source/wasm-cc
     volumes:
     - ${ENVOY_EXAMPLES_CACHE_DIR:-${HOME}/.cache/envoy/examples}:/home/envoybuild/.cache
-    - ..:/source
+    - ../..:/source
+    - .:/source/wasm-cc
     - ./lib:/output
 
   wasm_compile:
@@ -35,8 +36,9 @@ services:
     environment:
     - BUILD_UID=${UID:-1000}
     user: envoybuild
-    working_dir: /source
+    working_dir: /source/wasm-cc
     volumes:
     - ${ENVOY_EXAMPLES_CACHE_DIR:-${HOME}/.cache/envoy/examples}:/home/envoybuild/.cache
     - ../..:/source
+    - .:/source/wasm-cc
     - ./lib:/output

@@ -37,10 +37,10 @@ jobs:
         printf '%s\n' 'common --config=ci' > repo.bazelrc
         echo "common --enable_bzlmod" >> repo.bazelrc
         echo "common --noenable_workspace" >> repo.bazelrc
-        docker compose run --quiet --quiet-pull --quiet-build examples \
-          bash -c 'bazel build @envoy-example-wasm-cc//...'
+        docker compose -f docker-compose-wasm.yaml run --quiet-pull --remove-orphans wasm_compile
+        docker compose -f docker-compose-wasm.yaml run --quiet-pull --remove-orphans wasm_compile_update
       if: matrix.bazel-mode == 'bzlmod'
-      working-directory: examples
+      working-directory: examples/wasm-cc
       env:
         DOCKER_BUILDKIT: 1
         COMPOSE_BAKE: true
