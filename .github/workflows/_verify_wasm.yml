@@ -18,12 +18,6 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       with:
         path: examples
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      if: matrix.bazel-mode == 'bzlmod'
-      with:
-        repository: envoyproxy/envoy
-        ref: bzlmod-envoy-head
-        path: envoy
     - run: |
         docker pull envoyproxy/envoy:dev
         DEV_CONTAINER_ID=$(docker inspect --format='{{.Id}}' envoyproxy/envoy:dev)
@@ -36,6 +30,40 @@ jobs:
       working-directory: examples/wasm-cc
       env:
         BAZEL_MODE: ${{ matrix.bazel-mode }}
+    - name: Inject bzlmod envoy pin into MODULE.bazel
+      if: matrix.bazel-mode == 'bzlmod'
+      run: |
+        printf '\ngit_override(\n    module_name = "envoy",\n    remote = "https://github.com/envoyproxy/envoy",\n    commit = "db758b62448103c385ecfdc5ef5cd7100a3e4f0b",\n)\ngit_override(\n    module_name = "envoy_api",\n    remote = "https://github.com/envoyproxy/envoy",\n    commit = "db758b62448103c385ecfdc5ef5cd7100a3e4f0b",\n    strip_prefix = "api",\n)\n' >> MODULE.bazel
+      working-directory: examples/wasm-cc
+    - name: Inject workspace envoy pin into versions.bzl
+      if: matrix.bazel-mode == 'workspace'
+      run: |
+        ENVOY_SHA=$(git ls-remote https://github.com/envoyproxy/envoy main | awk '{print $1}')
+        echo "Resolved envoy main HEAD: ${ENVOY_SHA}"
+        curl -sSL "https://github.com/envoyproxy/envoy/archive/${ENVOY_SHA}.tar.gz" -o /tmp/envoy-main.tar.gz
+        ENVOY_SHA256=$(sha256sum /tmp/envoy-main.tar.gz | awk '{print $1}')
+        echo "Computed sha256: ${ENVOY_SHA256}"
+        {
+          echo 'import os, re'
+          echo 'sha = os.environ["ENVOY_SHA"]'
+          echo 'sha256 = os.environ["ENVOY_SHA256"]'
+          echo 'new_entry = ('
+          echo '    "\"envoy\": {\n"'
+          echo '    "        \"type\": \"github_archive\",\n"'
+          echo '    "        \"repo\": \"envoyproxy/envoy\",\n"'
+          echo '    f"        \"version\": \"{sha}\",\n"'
+          echo '    f"        \"sha256\": \"{sha256}\",\n"'
+          echo '    "        \"url\": \"https://github.com/{repo}/archive/{version}.tar.gz\",\n"'
+          echo '    "        \"strip_prefix\": \"envoy-{version}\",\n"'
+          echo '    "    },"'
+          echo ')'
+          echo 'path = "bazel/versions.bzl"'
+          echo 'content = open(path).read()'
+          echo 'content = re.sub(r"\"envoy\": \{.*?\n    \},", new_entry, content, flags=re.DOTALL)'
+          echo 'open(path, "w").write(content)'
+        } > /tmp/inject_versions.py
+        ENVOY_SHA="${ENVOY_SHA}" ENVOY_SHA256="${ENVOY_SHA256}" python3 /tmp/inject_versions.py
+      working-directory: examples/wasm-cc
     - run: |
         ./verify.sh
       working-directory: examples/wasm-cc
