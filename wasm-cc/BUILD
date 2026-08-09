@@ -4,7 +4,10 @@ load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
 
 licenses(["notice"])  # Apache 2
 
-exports_files(["example.rst"])
+exports_files(
+    ["example.rst"],
+    visibility = ["//visibility:public"],
+)
 
 selects.config_setting_group(
     name = "include_wasm_config",
@@ -54,7 +57,8 @@ filegroup(
             "BUILD",
             "README.md",
             "WORKSPACE",
-        ]),
+        ],
+    ),
 )
 
 pkg_tar(

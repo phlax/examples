@@ -38,7 +38,7 @@ jobs:
         echo "common --enable_bzlmod" >> repo.bazelrc
         echo "common --noenable_workspace" >> repo.bazelrc
         docker compose run --quiet --quiet-pull --quiet-build examples \
-          bash -c 'bazel build @envoy-example-wasm-cc//...'
+          bash -c 'bazel build //wasm-cc/...'
       if: matrix.bazel-mode == 'bzlmod'
       working-directory: examples
       env:
