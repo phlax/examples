@@ -20,6 +20,3 @@ local_path_override(
     module_name = "envoy_api",
     path = "../envoy/api",
 )
-
-envoy_examples_ext = use_extension("//bazel:extensions.bzl", "envoy_build_examples")
-use_repo(envoy_examples_ext, "envoy-example-wasm-cc")
