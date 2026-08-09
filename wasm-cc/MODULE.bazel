@@ -21,31 +21,34 @@ bazel_dep(name = "rules_rust", version = "0.68.1")
 
 bazel_dep(name = "toolchains_llvm", version = "1.4.0", dev_dependency = True)
 
-# Git overrides for bzlmod migration
+# Git overrides for bzlmod migration — always tracks envoy bzlmod-envoy-head branch.
+# NOTE: Using `branch` (not `commit`) is intentional: CI must always test against
+# the current envoy source, not a pinned fork snapshot. This means builds are not
+# hermetically reproducible across runs, which is the desired behaviour here.
 git_override(
     module_name = "envoy",
-    commit = "f75d37791e180ac9f5a09a9535ef912f0fb0bcc9",
-    remote = "https://github.com/mmorel-35/envoy",
+    branch = "bzlmod-envoy-head",
+    remote = "https://github.com/envoyproxy/envoy",
 )
 
 git_override(
     module_name = "envoy_api",
-    commit = "f75d37791e180ac9f5a09a9535ef912f0fb0bcc9",
-    remote = "https://github.com/mmorel-35/envoy",
+    branch = "bzlmod-envoy-head",
+    remote = "https://github.com/envoyproxy/envoy",
     strip_prefix = "api",
 )
 
 git_override(
     module_name = "envoy_build_config",
-    commit = "f75d37791e180ac9f5a09a9535ef912f0fb0bcc9",
-    remote = "https://github.com/mmorel-35/envoy",
+    branch = "bzlmod-envoy-head",
+    remote = "https://github.com/envoyproxy/envoy",
     strip_prefix = "mobile/envoy_build_config",
 )
 
 git_override(
     module_name = "envoy_mobile",
-    commit = "f75d37791e180ac9f5a09a9535ef912f0fb0bcc9",
-    remote = "https://github.com/mmorel-35/envoy",
+    branch = "bzlmod-envoy-head",
+    remote = "https://github.com/envoyproxy/envoy",
     strip_prefix = "mobile",
 )
 

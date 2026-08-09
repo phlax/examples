@@ -28,7 +28,7 @@ jobs:
         - bzlmod
     steps:
 
-    # ── workspace leg only ────────────────────────────────────────────────────
+    # ── shared: bind-mounts (workspace leg only, needs extra disk) ───────────
     - uses: envoyproxy/toolshed/actions/bind-mounts@598eacce15ab5f208102a2fd5669292868002701  # v0.4.0
       if: matrix.bazel-mode == 'workspace'
       with:
@@ -44,15 +44,21 @@ jobs:
           - src: /mnt/runner-cache
             target: /home/runner/.cache
             chown: "runner:runner"
+
+    # ── shared: checkout envoy (both legs) ───────────────────────────────────
+    # workspace leg: envoy default branch; bzlmod leg: bzlmod-envoy-head branch
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      if: matrix.bazel-mode == 'workspace'
       with:
         repository: envoyproxy/envoy
+        ref: ${{ matrix.bazel-mode == 'bzlmod' && 'bzlmod-envoy-head' || '' }}
         path: envoy
+
+    # ── shared: checkout examples (both legs) ────────────────────────────────
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      if: matrix.bazel-mode == 'workspace'
       with:
         path: examples
+
+    # ── workspace leg only ────────────────────────────────────────────────────
     - name: RBE auth check
       id: rbe
       if: matrix.bazel-mode == 'workspace' && github.event_name == 'pull_request'
@@ -80,8 +86,9 @@ jobs:
         common --config=bes
         EOF
         cat repo.bazelrc
-    - name: Build docs (workspace)
-      if: matrix.bazel-mode == 'workspace'
+
+    # ── shared: build docs (both legs via docker compose run docs) ───────────
+    - name: Build docs
       run: |
         export UID
         export GID=$(id -g)
@@ -93,6 +100,8 @@ jobs:
         COMPOSE_BAKE: true
         DOCKER_BUILDKIT: 1
         GITHUB_TOKEN: ${{ github.token }}
+
+    # ── workspace leg only ────────────────────────────────────────────────────
     - name: Docs upload (workspace)
       if: matrix.bazel-mode == 'workspace'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
@@ -102,47 +111,10 @@ jobs:
         retention-days: 30
 
     # ── bzlmod leg only ───────────────────────────────────────────────────────
-    # This leg does NOT check out envoy and does NOT run docker compose run docs.
-    # Envoy main cannot build docs under bzlmod yet; this leg tests the packaging
-    # fix from PR #1317 (examples_docs genrule + //:docs pkg_tar) directly in
-    # this repo, decoupled from the envoy pipeline.
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      if: matrix.bazel-mode == 'bzlmod'
-    - name: Install Bazelisk
-      if: matrix.bazel-mode == 'bzlmod'
-      uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3.0.0
-    - name: Build docs (bzlmod)
-      if: matrix.bazel-mode == 'bzlmod'
-      run: |
-        echo "bazel-mode: bzlmod — building //:docs with --enable_bzlmod"
-        bazel build //:docs --enable_bzlmod
-    - name: Verify tarball members (bzlmod)
-      if: matrix.bazel-mode == 'bzlmod'
-      run: |
-        tar tzf bazel-bin/docs.tar.gz | sort > members.txt
-        echo "=== tarball members ==="
-        cat members.txt
-        echo "======================="
-        if grep -q '\.rst\.rst$' members.txt; then
-          echo 'ERROR: double .rst extension found in tarball'
-          exit 1
-        fi
-        if grep -qx 'start/sandboxes/example.rst' members.txt; then
-          echo 'ERROR: unrenamed example.rst placeholder present in tarball'
-          exit 1
-        fi
-        if ! grep -qx 'start/sandboxes/wasm-cc.rst' members.txt; then
-          echo 'ERROR: wasm-cc.rst missing from tarball'
-          exit 1
-        fi
-        echo "Tarball member verification passed."
     - name: Docs upload (bzlmod)
       if: matrix.bazel-mode == 'bzlmod'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
         name: docs-bzlmod
-        path: |
-          bazel-bin/docs.tar.gz
-          members.txt
-        if-no-files-found: warn
+        path: envoy/generated/docs
         retention-days: 30
