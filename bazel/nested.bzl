@@ -2,7 +2,6 @@
 def _example_repo_impl(ctx):
     example_resources = [
         "WORKSPACE",
-        "BUILD",
         "bazel",
         "envoy.yaml",
         "example.rst",
@@ -10,8 +9,10 @@ def _example_repo_impl(ctx):
         "envoy_filter_http_wasm_example.cc",
         "Dockerfile-proxy",
     ]
+    source_root = ctx.path(ctx.attr.examples_root).dirname.get_child(ctx.attr.path)
     for d in example_resources:
-        ctx.symlink(ctx.path(ctx.attr.examples_root).dirname.get_child(ctx.attr.path).get_child(d), d)
+        ctx.symlink(source_root.get_child(d), d)
+    ctx.symlink(source_root.get_child("BUILD.wasm"), "BUILD")
 
 example_repository = repository_rule(
     implementation = _example_repo_impl,
