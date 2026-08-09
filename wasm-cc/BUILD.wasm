@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
 load(
     "//bazel:envoy_build_system.bzl",
     "envoy_package",
@@ -9,7 +10,10 @@ licenses(["notice"])  # Apache 2
 
 envoy_package()
 
-exports_files(["example.rst"])
+exports_files(
+    ["example.rst"],
+    visibility = ["//visibility:public"],
+)
 
 selects.config_setting_group(
     name = "include_wasm_config",
@@ -34,6 +38,7 @@ filegroup(
         ),
         "//conditions:default": [],
     }),
+    visibility = ["//visibility:public"],
 )
 
 envoy_wasm_cc_binary(
@@ -48,5 +53,23 @@ envoy_wasm_cc_binary(
 
 filegroup(
     name = "files",
-    srcs = glob(["**/*"], exclude = ["example.rst"]),
+    srcs = glob(
+        ["**/*"],
+        exclude = [
+            "**/*~",
+            "**/.*",
+            ".*/**/*",
+            "example.rst",
+            "BUILD",
+            "README.md",
+            "WORKSPACE",
+        ],
+    ),
+)
+
+pkg_tar(
+    name = "includes",
+    srcs = [":files"],
+    package_dir = "_include/wasm-cc",
+    visibility = ["//visibility:public"],
 )
