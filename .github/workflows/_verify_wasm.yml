@@ -10,12 +10,37 @@ on:
 jobs:
   wasm:
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        bazel-mode: [workspace, bzlmod]
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        path: examples
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      if: matrix.bazel-mode == 'bzlmod'
+      with:
+        repository: envoyproxy/envoy
+        ref: bzlmod-envoy-head
+        path: envoy
     - run: |
         docker pull envoyproxy/envoy:dev
         DEV_CONTAINER_ID=$(docker inspect --format='{{.Id}}' envoyproxy/envoy:dev)
         echo "DEV_CONTAINER_ID=${DEV_CONTAINER_ID}" >> $GITHUB_ENV
+      if: matrix.bazel-mode == 'workspace'
     - run: |
         ./verify.sh
-      working-directory: wasm-cc
+      if: matrix.bazel-mode == 'workspace'
+      working-directory: examples/wasm-cc
+    - run: |
+        printf '%s\n' 'common --config=ci' > repo.bazelrc
+        echo "common --enable_bzlmod" >> repo.bazelrc
+        echo "common --noenable_workspace" >> repo.bazelrc
+        docker compose run --quiet --quiet-pull --quiet-build examples bazel build @envoy-example-wasm-cc//...
+      if: matrix.bazel-mode == 'bzlmod'
+      working-directory: examples
+      env:
+        DOCKER_BUILDKIT: 1
+        COMPOSE_BAKE: true
+        BUILDKIT_PROGRESS: quiet

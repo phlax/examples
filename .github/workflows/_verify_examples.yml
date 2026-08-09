@@ -73,6 +73,7 @@ jobs:
         printf '%s\n' 'common --config=ci' > repo.bazelrc
         if [ "${BAZEL_MODE}" = "bzlmod" ]; then
           echo "common --enable_bzlmod" >> repo.bazelrc
+          echo "common --noenable_workspace" >> repo.bazelrc
         fi
         docker compose run --quiet --quiet-pull --quiet-build examples
       working-directory: examples
