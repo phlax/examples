@@ -105,7 +105,7 @@ s.close()
 }
 
 prepare_ports () {
-    local paths path role roles reserved=() other port
+    local paths path role roles reserved=() other port attempt
     read -ra paths <<< "$(echo "$PATHS" | tr ',' ' ')"
     RESOLVED_PORTS=()
     EXEMPT_PORTS=()
@@ -139,7 +139,14 @@ prepare_ports () {
         [[ -n "$role" ]] || continue
         if [[ "$ROLES_PINNED" != *" ${role} "* ]]; then
             if [[ ! -v "$role" || "${!role}" == 0 ]]; then
-                port=$(reserve_port) || return 1
+                for ((attempt=0; attempt<100; attempt++)); do
+                    port=$(reserve_port) || return 1
+                    [[ " ${RESOLVED_PORTS[*]} " != *" ${port} "* ]] && break
+                done
+                if [[ "$attempt" == 100 ]]; then
+                    echo "ERROR: could not reserve a distinct port for ${role}" >&2
+                    return 1
+                fi
                 export "${role}=${port}"
             fi
         fi

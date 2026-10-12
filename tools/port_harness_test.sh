@@ -142,3 +142,7 @@ chmod +x "$work/legacy-example/verify.sh"
 tar cf "$work/legacy.tar" -C "$work" legacy-example
 HOME="$work" bash "$root/verify_example.sh" legacy-example "$work/legacy.tar" > "$work/result"
 grep -q '^legacy-example: 0:' "$work/result" || fail "legacy CI default was pinned"
+
+unset PORT_PROXY0 PORT_PROXY1 PORT_LINK PORT_PIN
+reserve_port () { echo "$first"; }
+if prepare_ports; then fail "repeated pre-reservation accepted"; fi
