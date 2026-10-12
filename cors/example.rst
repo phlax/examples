@@ -45,7 +45,7 @@ Change to the ``cors/frontend`` directory, and start the containers:
 
             Name                          Command              State                    Ports
   -----------------------------------------------------------------------------------------------------------
-  frontend_front-envoy_1        /docker-entrypoint.sh /bin ... Up           10000/tcp, 0.0.0.0:8000->8000/tcp
+  frontend_front-envoy_1        /docker-entrypoint.sh /bin ... Up           0.0.0.0:8000->10000/tcp
   frontend_frontend-service_1   python3 /code/service.py   ... Up (healthy)
 
 Now, switch to the ``backend`` directory in the ``cors`` example, and start the containers:
@@ -61,7 +61,7 @@ Now, switch to the ``backend`` directory in the ``cors`` example, and start the 
             Name                         Command             State                            Ports
   -----------------------------------------------------------------------------------------------------------------------------------
   backend_backend-service_1   python3 /code/service.py   ... Up (healthy)
-  backend_front-envoy_1       /docker-entrypoint.sh /bin ... Up             10000/tcp, 0.0.0.0:8002->8000/tcp, 0.0.0.0:8003->8001/tcp
+  backend_front-envoy_1       /docker-entrypoint.sh /bin ... Up             0.0.0.0:8002->10000/tcp, 0.0.0.0:8003->8001/tcp
 
 Step 2: Test Envoy's CORS capabilities
 **************************************

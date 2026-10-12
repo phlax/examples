@@ -37,7 +37,7 @@ Change to the ``rbac`` directory and bring up the docker composition.
 
   Name             Command                          State   Ports
   ------------------------------------------------------------------------------------------------------------
-  rbac_backend_1   gunicorn -b 0.0.0.0:80 htt ...   Up      0.0.0.0:8080->80/tcp
+  rbac_backend_1   gunicorn -b 0.0.0.0:80 htt ...   Up      8080/tcp
   rbac_envoy_1     /docker-entrypoint.sh /usr ...   Up      0.0.0.0:10000->10000/tcp, 0.0.0.0:10001->10001/tcp
 
 Step 2: Denial of upstream service using RBAC

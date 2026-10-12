@@ -49,7 +49,8 @@ Terminal 2 ::
 
                   Name                               Command               State                Ports
     -----------------------------------------------------------------------------------------------------------------
-    load-reporting-service_http_service_1   /docker-entrypoint.sh /usr ... Up           10000/tcp, 0.0.0.0:81->80/tcp
+    load-reporting-service_envoy_1          /docker-entrypoint.sh /usr ... Up           10000/tcp, 0.0.0.0:80->80/tcp, 0.0.0.0:8081->8081/tcp
+    load-reporting-service_http_service_1   /docker-entrypoint.sh /usr ... Up
     load-reporting-service_http_service_2   python3 /code/service.py   ... Up (healthy)
     load-reporting-service_lrs_server_1     go run main.go                 Up
 

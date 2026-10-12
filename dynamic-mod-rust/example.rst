@@ -63,8 +63,8 @@ Change to the ``dynamic-mod-rust`` directory, and start the composition:
     $ docker compose up --build -d
     $ docker compose ps
 
-    NAME                             COMMAND                  SERVICE       STATUS
-    dynamic-mod-rust-proxy-1         "/docker-entrypoint.…"   proxy         Up
+    NAME                             COMMAND                  SERVICE       STATUS   PORTS
+    dynamic-mod-rust-proxy-1         "/docker-entrypoint.…"   proxy         Up       0.0.0.0:10000->10000/tcp
     dynamic-mod-rust-web_service-1   "/bin/echo-server"       web_service   Up
 
 Step 2: Check web response

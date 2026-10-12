@@ -37,7 +37,7 @@ Change to the ``lua-cluster-specifier`` directory, and bring up the composition.
 
   Name                                  Command                        State   Ports
   --------------------------------------------------------------------------------------------
-  lua-cluster-specifier-proxy-1         /docker-entrypoint.sh /usr ... Up      10000/tcp, 0.0.0.0:10000->10000/tcp
+  lua-cluster-specifier-proxy-1         /docker-entrypoint.sh /usr ... Up      0.0.0.0:10000->10000/tcp
 
 Step 2: Send a request to the normal service
 ********************************************
