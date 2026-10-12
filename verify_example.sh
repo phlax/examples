@@ -24,6 +24,7 @@ complete () {
 }
 
 verify () {
+    local prefix role override
     tar xf "$EXAMPLE_DIR" -C "$RUNDIR"
     export DOCKER_NO_PULL=1
     export DOCKER_RMI_CLEANUP=1
@@ -38,6 +39,16 @@ verify () {
     else
         cd "${EXAMPLE_NAME}"
     fi
+    # Keep legacy example-prefixed defaults ephemeral in the Bazel matrix.
+    prefix="${EXAMPLE_NAME^^}"
+    prefix="${prefix//-/_}"
+    while read -r role; do
+        override="${prefix}_${role}"
+        if [[ ! -v "$override" ]]; then
+            export "${override}=0"
+        fi
+    done < <(grep -rhoE '\$\{PORT_[A-Z0-9_]+' --include='docker-compose*.y*ml' . \
+        | sed 's/^${//' | sort -u)
     script -q -c "./verify.sh" "$TMPOUT" >/dev/null </dev/null
 }
 

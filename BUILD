@@ -231,6 +231,7 @@ sh_test(
     data = [
         ":compose_ports_json",
         "verify-common.sh",
+        "verify_example.sh",
         "tools/check_port_manifests.sh",
         "tools/lint_ports.jq",
     ],

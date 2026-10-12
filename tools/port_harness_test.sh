@@ -51,6 +51,24 @@ command () {
 ss () { :; }
 fallback="$(reserve_port)"
 [[ "$fallback" -ge "$low" && "$fallback" -le "$high" ]] || fail "bash fallback outside range"
+unset -f ss
+# shellcheck disable=SC2317
+command () {
+    case "$*" in
+        "-v python3"|"-v ss") return 1 ;;
+    esac
+    builtin command "$@"
+}
+fallback="$(reserve_port)"
+[[ "$fallback" -ge "$low" && "$fallback" -le "$high" ]] || fail "TCP fallback outside range"
+# shellcheck disable=SC2317
+command () {
+    case "$*" in
+        "-v python3"|"-v ss"|"-v timeout") return 1 ;;
+    esac
+    builtin command "$@"
+}
+if reserve_port; then fail "missing reservation tools accepted"; fi
 unset -f command ss
 # Exercise multi-line resolution on Compose versions that retain both publications.
 ROLES_PRERESERVED=" PORT_LINK "
@@ -79,6 +97,13 @@ RESOLVED_PORTS=("$first" "$second" 10000)
 EXEMPT_PORTS=()
 if check_published_ports; then fail "non-ephemeral publication accepted"; fi
 
+unset PORT_PROXY0 PORT_PROXY1 PORT_LINK
+export PORT_PIN=0
+prepare_ports
+[[ "$PORT_PIN" == 0 && "$ROLES_PINNED" != *" PORT_PIN "* ]] || fail "explicit zero treated as a pin"
+resolve_ports
+[[ "$PORT_PIN" != 0 ]] || fail "explicit zero not resolved"
+
 rm "$PORT_MANIFEST_PATH"
 jq -n --argjson port "$first" '[{example:"a",service:"envoy",port:$port,target:80,proto:"tcp",allocated:true}]' > "$work/a.ports.json"
 jq --argjson port "$third" 'map(.example="b" | .port=$port)' "$work/a.ports.json" > "$work/b.ports.json"
@@ -104,3 +129,16 @@ for bad in '"80:80"' '"127.0.0.1:80:80/tcp"' '"80"' '{"published":80,"target":80
         fail "lint accepted $bad"
     fi
 done
+
+mkdir -p "$work/legacy-example"
+# shellcheck disable=SC2016
+printf '%s\n' 'services: {proxy: {ports: ["${PORT_PROXY:-80}:80"]}}' > "$work/legacy-example/docker-compose.yaml"
+cat > "$work/legacy-example/verify.sh" <<'SH'
+#!/bin/bash -e
+export PORT_PROXY="${LEGACY_EXAMPLE_PORT_PROXY:-10100}"
+[[ "$PORT_PROXY" == 0 ]]
+SH
+chmod +x "$work/legacy-example/verify.sh"
+tar cf "$work/legacy.tar" -C "$work" legacy-example
+HOME="$work" bash "$root/verify_example.sh" legacy-example "$work/legacy.tar" > "$work/result"
+grep -q '^legacy-example: 0:' "$work/result" || fail "legacy CI default was pinned"
