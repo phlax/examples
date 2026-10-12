@@ -6,6 +6,8 @@
 # re-exports PORT_<ROLE> so that tests can use http://localhost:${PORT_<ROLE>}.
 # Roles that are interpolated outside `ports:` (and so are needed before `up`)
 # are instead pre-reserved by binding and releasing a free port.
+# Set PRERESERVE_ROLES="PORT_PROXY PORT_DEV_PROXY" for roles needed in generated
+# files before `up`; call prepare_ports before generating those files.
 # Multiple publications of one target are also pre-reserved: Compose merges
 # identical host-port-0 mappings during interpolation.
 # Set PORT_PROXY=10000 ./verify.sh to pin a port locally.
@@ -66,46 +68,23 @@ _port_bindings () {
 }
 
 reserve_port () {
-    if command -v python3 > /dev/null; then
-        python3 -c '
+    command -v python3 > /dev/null || {
+        echo "ERROR: reserve_port requires python3" >&2
+        return 1
+    }
+    python3 -c '
 import socket
 s = socket.socket()
 s.bind(("", 0))
 print(s.getsockname()[1])
 s.close()
 '
-        return
-    fi
-    local low high port attempt listeners
-    if [[ ! -r /proc/sys/net/ipv4/ip_local_port_range ]]; then
-        echo "ERROR: reserve_port needs python3 or the Linux ephemeral port range" >&2
-        return 1
-    fi
-    read -r low high < /proc/sys/net/ipv4/ip_local_port_range
-    if ! command -v ss > /dev/null; then
-        if ! command -v timeout > /dev/null || \
-            [[ "$(bash -c 'exec 3<>/dev/tcp/127.0.0.1/0' 2>&1)" == *"No such file or directory"* ]]; then
-            echo "ERROR: reserve_port needs python3, ss, or bash /dev/tcp with timeout" >&2
-            return 1
-        fi
-    fi
-    for ((attempt=0; attempt<100; attempt++)); do
-        port=$((low + RANDOM % (high - low + 1)))
-        if command -v ss > /dev/null; then
-            listeners=$(ss -H -ltn "sport = :$port") || return 1
-            [[ -z "$listeners" ]] || continue
-        elif timeout 1 bash -c "exec 3<>/dev/tcp/127.0.0.1/$port" 2> /dev/null; then
-            continue
-        fi
-        echo "$port"
-        return
-    done
-    echo "ERROR: reserve_port could not find a free ephemeral port after 100 attempts" >&2
-    return 1
 }
 
 prepare_ports () {
+    [[ -n "${PORT_MANIFEST_PATH:-}" ]] && return 0
     local paths path role roles reserved=() other port
+    read -ra reserved <<< "${PRERESERVE_ROLES:-}"
     read -ra paths <<< "$(echo "$PATHS" | tr ',' ' ')"
     RESOLVED_PORTS=()
     EXEMPT_PORTS=()

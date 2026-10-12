@@ -6,6 +6,7 @@
 
 export NAME=single-page-app
 export MANUAL=true
+export PRERESERVE_ROLES="PORT_PROXY PORT_DEV_PROXY"
 
 
 BACKUP_FILES=(
@@ -27,6 +28,7 @@ export -f finally
 
 # shellcheck source=verify-common.sh
 . "$(dirname "${BASH_SOURCE[0]}")/../verify-common.sh"
+prepare_ports
 
 # As much of the logic is implemented in js, not everything can get tested, at least without using
 # eg selenium or similar.

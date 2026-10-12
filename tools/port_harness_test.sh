@@ -43,15 +43,23 @@ prepare_ports
 [[ "$PORT_PROXY0" != 0 && "$PORT_PROXY1" != 0 && "$PORT_PROXY0" != "$PORT_PROXY1" && "$PORT_PIN" == 10000 ]] || fail "duplicate publications or override lost"
 # shellcheck disable=SC2153
 [[ "$PORT_LINK" -ge "$low" && "$PORT_LINK" -le "$high" ]] || fail "reservation outside range"
-# shellcheck disable=SC2317
-command () {
-    if [[ "$*" == "-v python3" ]]; then return 1; fi
-    builtin command "$@"
-}
-ss () { :; }
-fallback="$(reserve_port)"
-[[ "$fallback" -ge "$low" && "$fallback" -le "$high" ]] || fail "bash fallback outside range"
-unset -f command ss
+# Roles needed by generated files cannot be inferred from Compose.
+(
+    unset PORT_MANIFEST_PATH PORT_LINK PORT_PROXY0 PORT_PROXY1
+    export PRERESERVE_ROLES="PORT_EARLY PORT_PIN PORT_LINK"
+    export PORT_EARLY=0
+    prepare_ports
+    [[ "$PORT_EARLY" -ge "$low" && "$PORT_EARLY" -le "$high" && "$PORT_PIN" == 10000 ]] || fail "explicit reservation or pin lost"
+    for role in PORT_EARLY PORT_PIN PORT_LINK; do
+        [[ "$ROLES_PRERESERVED" == *" ${role} "* && " ${RESOLVED_PORTS[*]} " == *" ${!role} "* && " ${EXEMPT_PORTS[*]} " == *" ${!role} "* ]] || fail "reservation not tracked"
+    done
+    state="$PORT_EARLY $PORT_LINK $PORT_PROXY0 $PORT_PROXY1 $PORT_MANIFEST_PATH $ROLES_PRERESERVED $ROLES_PINNED ${RESOLVED_PORTS[*]} ${EXEMPT_PORTS[*]}"
+    printf '[{"prepared":true}]\n' > "$PORT_MANIFEST_PATH"
+    prepare_ports
+    [[ "$state" == "$PORT_EARLY $PORT_LINK $PORT_PROXY0 $PORT_PROXY1 $PORT_MANIFEST_PATH $ROLES_PRERESERVED $ROLES_PINNED ${RESOLVED_PORTS[*]} ${EXEMPT_PORTS[*]}" ]] || fail "preparation is not idempotent"
+    jq -e '.[0].prepared' "$PORT_MANIFEST_PATH" > /dev/null
+)
+printf '[]\n' > "$PORT_MANIFEST_PATH"
 # Exercise multi-line resolution on Compose versions that retain both publications.
 ROLES_PRERESERVED=" PORT_LINK "
 RESOLVED_PORTS=(10000 "$PORT_LINK")
