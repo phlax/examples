@@ -30,7 +30,7 @@ for model in gpt-4o-mini claude-haiku-4-5 gemini-2.5-flash; do
         and (.choices[0].message.content | startswith("Envoy is"))'
 done
 
-run_log "Stream from a Gemini model: the deltas assemble the reply"
+run_log "Stream a response: the Gemini deltas assemble the reply"
 stream="$(chat gemini-2.5-flash true | tr -d '\r')"
 sed -n 's/^data: //p' <<< "$stream" \
     | grep -vx '\[DONE\]' \
@@ -39,17 +39,25 @@ sed -n 's/^data: //p' <<< "$stream" \
         and (map(.choices[0].delta.content) | join("")
              | startswith("Envoy is a high-performance"))'
 
-run_log "Check the stream ends with data: [DONE]"
 grep -qx 'data: \[DONE\]' <<< "$stream"
 
-run_log "Check the access log: each request went to its provider's mock"
-wait_for 10 bash -c "${DOCKER_COMPOSE[*]} logs proxy | grep -F 'gpt-4o-mini -> openai /v1/chat/completions 200'"
-wait_for 10 bash -c "${DOCKER_COMPOSE[*]} logs proxy | grep -F 'claude-haiku-4-5 -> anthropic /v1/messages 200'"
-wait_for 10 bash -c "${DOCKER_COMPOSE[*]} logs proxy | grep -F 'gemini-2.5-flash -> gemini /v1beta/models/gemini-2.5-flash:generateContent 200'"
-wait_for 10 bash -c "${DOCKER_COMPOSE[*]} logs proxy | grep -F 'gemini-2.5-flash -> gemini /v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse 200'"
+run_log "See where each request went: each request went to its provider's mock"
+wait_for 10 bash -c "${DOCKER_COMPOSE[*]} logs proxy | grep -F 'claude-haiku-4-5 -> anthropic /v1/messages 200 via_upstream'"
+wait_for 10 bash -c "${DOCKER_COMPOSE[*]} logs proxy | grep -F 'gpt-4o-mini -> openai /v1/chat/completions 200 via_upstream'"
+wait_for 10 bash -c "${DOCKER_COMPOSE[*]} logs proxy | grep -F 'gemini-2.5-flash -> gemini /v1beta/models/gemini-2.5-flash:generateContent 200 via_upstream'"
+wait_for 10 bash -c "${DOCKER_COMPOSE[*]} logs proxy | grep -F 'gemini-2.5-flash -> gemini /v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse 200 via_upstream'"
 
-run_log "Answer a model that no provider serves with a local OpenAI error"
-chat llama-3.1-8b | jq -e '.error.code == "model_not_found"'
+run_log "Ask for a model that no provider serves: a local OpenAI error"
+_curl -X POST "http://localhost:${PORT_PROXY}/v1/chat/completions" \
+      -H 'content-type: application/json' \
+      -d '{"model": "llama-3.1-8b", "messages": [{"role": "user", "content": "Hi"}]}' \
+      | jq -e '.error.code == "model_not_found"'
+responds_with \
+    "404" \
+    -o /dev/null -w '%{http_code}' \
+    -X POST "http://localhost:${PORT_PROXY}/v1/chat/completions" \
+    -H 'content-type: application/json' \
+    -d '{"model": "llama-3.1-8b", "messages": [{"role": "user", "content": "Hi"}]}'
 
 run_log "Check the transcoder's statistics: everything transcoded, nothing failed"
 responds_with \
