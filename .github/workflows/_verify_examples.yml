@@ -94,6 +94,7 @@ jobs:
         docker compose run --quiet --quiet-pull --quiet-build examples bash -c '
           bazel run ${BAZEL_BUILD_EXTRA_OPTIONS} --config=examples //:verify_examples
           result=$?
+          bazel run ${BAZEL_BUILD_EXTRA_OPTIONS} --config=examples //:check_example_ports || result=$?
           mkdir -p port-manifests
           cp bazel-bin/*.ports.json port-manifests/
           exit "$result"

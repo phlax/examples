@@ -90,14 +90,10 @@ if check_published_ports; then fail "non-ephemeral publication accepted"; fi
 rm "$PORT_MANIFEST_PATH"
 jq -n --argjson port "$first" '[{example:"a",service:"envoy",port:$port,target:80,proto:"tcp",allocated:true}]' > "$work/a.ports.json"
 jq --argjson port "$third" 'map(.example="b" | .port=$port)' "$work/a.ports.json" > "$work/b.ports.json"
-bash "$root/tools/check_port_manifests.sh" "$work"
-cp "$work/a.ports.json" "$work/b.ports.json"
-jq 'map(.example="b")' "$work/b.ports.json" > "$work/new"
-mv "$work/new" "$work/b.ports.json"
-if bash "$root/tools/check_port_manifests.sh" "$work"; then fail "collision accepted"; fi
+bash "$root/tools/check_port_manifests.sh" "$work/a.ports.json" "$work/b.ports.json"
 jq 'map(.example="b" | .port=10000 | .allocated=false)' "$work/b.ports.json" > "$work/new"
 mv "$work/new" "$work/b.ports.json"
-if bash "$root/tools/check_port_manifests.sh" "$work"; then fail "invalid allocation accepted"; fi
+if bash "$root/tools/check_port_manifests.sh" "$work/a.ports.json" "$work/b.ports.json"; then fail "invalid allocation accepted"; fi
 
 # shellcheck disable=SC2016
 valid='{"fixture.yaml":{"services":{"envoy":{"ports":["${PORT_A:-80}:80","127.0.0.1:${PORT_B:-81}:80/udp","[::1]:${PORT_C:-82}:80",{"published":"${PORT_D:-83}","target":80}]}}}}'

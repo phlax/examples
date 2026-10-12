@@ -5,18 +5,6 @@ RED='\033[0;31m'
 NC='\033[0m'
 RETURNS=0
 
-checker="$1"
-shift
-results=()
-manifests=()
-for output in "$@"; do
-    if [[ "$output" == *.ports.json ]]; then
-        manifests+=("$output")
-    else
-        results+=("$output")
-    fi
-done
-
 trim () {
     text=$(< /dev/stdin)
     echo -n "$text" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'
@@ -32,7 +20,7 @@ fail () {
     echo "${RED}failed (${exitcode})${NC} in ${timing}"
 }
 
-for result in "${results[@]}"; do
+for result in "$@"; do
     RESULT="$(head -n1 "$result")"
     NAME="$(echo "${RESULT}" | cut -d: -f1 | trim)"
     EXITCODE="$(echo "${RESULT}" | cut -d: -f2 | trim)"
@@ -45,7 +33,7 @@ for result in "${results[@]}"; do
     fi
 done
 
-for result in "${results[@]}"; do
+for result in "$@"; do
     RESULT=$(head -n1 "$result")
     NAME="$(echo "${RESULT}" | cut -d: -f1 | trim)"
     EXITCODE="$(echo "${RESULT}" | cut -d: -f2 | trim)"
@@ -57,10 +45,5 @@ for result in "${results[@]}"; do
     fi
     echo -e "${NAME}: ${OUTCOME}"
 done
-
-manifest_dir="$(mktemp -d)"
-trap 'rm -rf "$manifest_dir"' EXIT
-cp "${manifests[@]}" "$manifest_dir/"
-bash "$checker" "$manifest_dir" || RETURNS=1
 
 exit "${RETURNS}"

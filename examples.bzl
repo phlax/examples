@@ -106,6 +106,13 @@ def envoy_examples(examples):
     sh_binary(
         name = "verify_examples",
         srcs = [":verify_examples.sh"],
-        args = ["$(location :tools/check_port_manifests.sh)"] + RESULT_FILES + MANIFEST_FILES,
-        data = RESULTS + RESULT_OUTS + MANIFEST_OUTS + [":tools/check_port_manifests.sh"],
+        args = RESULT_FILES,
+        data = RESULTS + RESULT_OUTS,
+    )
+
+    sh_binary(
+        name = "check_example_ports",
+        srcs = ["tools/check_port_manifests.sh"],
+        args = MANIFEST_FILES,
+        data = RESULTS + MANIFEST_OUTS,
     )
