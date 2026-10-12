@@ -53,6 +53,7 @@ def envoy_example(name, shared = ":shared_files", common_fun = ":verify-common.s
 def envoy_examples(examples):
     RESULTS = []
     RESULT_FILES = []
+    MANIFEST_FILES = []
 
     native.filegroup(
         name = "shared_files",
@@ -71,10 +72,17 @@ def envoy_examples(examples):
         envoy_example(name = example, shared = ":shared_files")
         native.genrule(
             name = "%s_result" % example,
-            outs = ["%s_result.txt" % example],
+            outs = [
+                "%s_result.txt" % example,
+                "%s.ports.json" % example,
+            ],
             cmd = """
-                ./$(location :verify_%s) %s $(location :%s_dir) >> $@
-            """ % (example, example, example),
+                export PORT_MANIFEST_DIR=$$(mktemp -d)
+                trap 'rm -rf "$$PORT_MANIFEST_DIR"' EXIT
+                ./$(location :verify_%s) %s $(location :%s_dir) >> $(location :%s_result.txt)
+                jq -s --arg example %s 'add | map(.example = $$example)' \
+                    "$$PORT_MANIFEST_DIR"/*.ports.json > $(location :%s.ports.json)
+            """ % (example, example, example, example, example, example),
             tools = [
                 "verify_%s" % example,
                 "%s_dir" % example,
@@ -82,11 +90,12 @@ def envoy_examples(examples):
             tags = ["no-remote-exec", "no-sandbox"],
         )
         RESULTS.append("%s_result" % example)
-        RESULT_FILES.append("$(location %s)" % ("%s_result" % example))
+        RESULT_FILES.append("$(location :%s_result.txt)" % example)
+        MANIFEST_FILES.append("$(location :%s.ports.json)" % example)
 
     sh_binary(
         name = "verify_examples",
         srcs = [":verify_examples.sh"],
-        args = RESULT_FILES,
-        data = RESULTS,
+        args = ["$(location :tools/check_port_manifests.sh)"] + RESULT_FILES + MANIFEST_FILES,
+        data = RESULTS + [":tools/check_port_manifests.sh"],
     )

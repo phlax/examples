@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-export NAME=load-reporting
+export NAME=load-reporting-service
 export UPARGS="--scale http_service=2"
 
 # shellcheck source=verify-common.sh
