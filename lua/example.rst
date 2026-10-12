@@ -36,7 +36,7 @@ Change to the ``lua`` directory.
 
       Name                     Command               State             Ports
   --------------------------------------------------------------------------------------------
-  lua_proxy_1         /docker-entrypoint.sh /bin ... Up      10000/tcp, 0.0.0.0:10000->10000/tcp
+  lua_proxy_1         /docker-entrypoint.sh /bin ... Up      0.0.0.0:10000->10000/tcp
   lua_web_service_1   "example-echo -c /et…"         Up      8080/tcp
 
 Step 2: Send a request to the service
