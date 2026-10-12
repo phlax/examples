@@ -1,3 +1,6 @@
+load("@aspect_bazel_lib//lib:jq.bzl", "jq")
+load("@aspect_bazel_lib//lib:yq.bzl", "yq")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
@@ -184,18 +187,52 @@ pkg_tar(
     visibility = ["//visibility:public"],
 )
 
-sh_test(
-    name = "lint_ports",
-    srcs = ["lint_ports.sh"],
-    data = glob(
+yq(
+    name = "compose_ports_json",
+    srcs = glob(
         [
-            "*/docker-compose*.yaml",
-            "*/docker-compose*.yml",
-            "*/*/docker-compose*.yaml",
-            "*/*/docker-compose*.yml",
+            "*/docker-compose*.y*ml",
+            "*/*/docker-compose*.y*ml",
         ],
         exclude = ["**/node_modules/**"],
-    ),
+    ) + [
+        "@envoy-example-filter-cc//:compose_files",
+        "@envoy-example-wasm-cc//:compose_files",
+    ],
+    expression = '{"file": filename, "config": .} as $item ireduce ({}; . * {($item.file): $item.config})',
+    args = ["-o=json"],
+)
+
+jq(
+    name = "lint_ports_check",
+    srcs = [":compose_ports_json"],
+    filter_file = "tools/lint_ports.jq",
+)
+
+build_test(
+    name = "lint_ports",
+    targets = [":lint_ports_check"],
+)
+
+sh_test(
+    name = "port_collision_test",
+    srcs = ["tools/port_collision_test.sh"],
+    args = ["$(location :gzip_dir)"],
+    data = [":gzip_dir"],
+    tags = ["manual", "requires-docker", "no-sandbox", "no-remote-exec"],
+    timeout = "long",
+)
+
+sh_test(
+    name = "port_harness_test",
+    srcs = ["tools/port_harness_test.sh"],
+    args = ["$(location :compose_ports_json)"],
+    data = [
+        ":compose_ports_json",
+        "verify-common.sh",
+        "tools/check_port_manifests.sh",
+        "tools/lint_ports.jq",
+    ],
 )
 
 envoy_examples(

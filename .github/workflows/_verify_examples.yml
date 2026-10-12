@@ -99,6 +99,12 @@ jobs:
         BUILDKIT_PROGRESS: quiet
         GITHUB_TOKEN: ${{ github.token }}
 
+    - name: Check concurrent port allocation
+      working-directory: examples
+      run: |
+        docker compose run --quiet examples \
+          bazel test --config=examples //:port_collision_test --test_output=errors
+
     - run: |
         TEMPDIR=/cache/docker
         sudo tar cf - -C /var/lib/docker-examples . | zstd - -q -T0 -o "${TEMPDIR}/docker.tar.zst"
