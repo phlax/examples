@@ -219,6 +219,7 @@ sh_test(
     srcs = ["tools/port_collision_test.sh"],
     args = ["$(location :gzip_dir)"],
     data = [":gzip_dir"],
+    env = {"BUILDX_BAKE_ENTITLEMENTS_FS": "0"},
     tags = ["manual", "requires-docker", "no-sandbox", "no-remote-exec"],
     timeout = "long",
 )
