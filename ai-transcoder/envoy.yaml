@@ -52,9 +52,7 @@ static_resources:
                     string_match: {prefix: claude-}
                 route:
                   cluster: anthropic
-                  regex_rewrite:
-                    pattern: {regex: '^/v1/chat/completions$'}
-                    substitution: /v1/messages
+                  prefix_rewrite: /v1/messages
                 typed_per_filter_config:
                   transcode:
                     "@type": type.googleapis.com/envoy.extensions.filters.http.ai_protocol_manager.v3.AiProtocolManagerPerRoute

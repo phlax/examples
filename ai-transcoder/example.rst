@@ -49,12 +49,12 @@ Change to the ``ai-transcoder`` directory, and build and start the proxy and the
    examples/ai-transcoder
    $ docker compose pull
    $ docker compose up --build -d
-   $ docker compose ps
-   NAME                        IMAGE                     COMMAND                  SERVICE     CREATED          STATUS                    PORTS
-   ai-transcoder-anthropic-1   ai-transcoder-anthropic   "python3 /code/servi…"   anthropic   10 seconds ago   Up 9 seconds (healthy)
-   ai-transcoder-gemini-1      ai-transcoder-gemini      "python3 /code/servi…"   gemini      10 seconds ago   Up 9 seconds (healthy)
-   ai-transcoder-openai-1      ai-transcoder-openai      "python3 /code/servi…"   openai      10 seconds ago   Up 9 seconds (healthy)
-   ai-transcoder-proxy-1       ai-transcoder-proxy       "/docker-entrypoint.…"   proxy       10 seconds ago   Up 4 seconds (healthy)    0.0.0.0:9901->9901/tcp, 0.0.0.0:10000->10000/tcp
+   $ docker compose ps --format "table {{.Name}}\t{{.Service}}\t{{.Ports}}"
+   NAME                        SERVICE     PORTS
+   ai-transcoder-anthropic-1   anthropic   8080/tcp
+   ai-transcoder-gemini-1      gemini      8080/tcp
+   ai-transcoder-openai-1      openai      8080/tcp
+   ai-transcoder-proxy-1       proxy       0.0.0.0:9901->9901/tcp, 0.0.0.0:10000->10000/tcp
 
 Envoy listens for OpenAI chat requests on port ``10000``, and serves its admin interface on port ``9901``.
 
