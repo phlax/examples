@@ -48,7 +48,7 @@ Start all the containers.
 
         Name                      Command               State                          Ports
   -----------------------------------------------------------------------------------------------------------------------
-  golang_proxy_1         /docker-entrypoint.sh /usr ...   Up      10000/tcp, 0.0.0.0:10000->10000/tcp,:::10000->10000/tcp
+  golang_proxy_1         /docker-entrypoint.sh /usr ...   Up      0.0.0.0:10000->10000/tcp,:::10000->10000/tcp
   golang_web_service_1   /bin/echo-server                 Up      8080/tcp
 
 Step 3: Make a request handled by the Go plugin
