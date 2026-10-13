@@ -4,7 +4,9 @@ if [[ $# == 0 ]]; then
     echo "ERROR: no port manifests provided" >&2
     exit 1
 fi
-read -r low high < /proc/sys/net/ipv4/ip_local_port_range
+# Skip the range check where the kernel range is unreadable
+low=0 high=65535
+[[ -r /proc/sys/net/ipv4/ip_local_port_range ]] && read -r low high < /proc/sys/net/ipv4/ip_local_port_range
 
 printf 'EXAMPLE\tSERVICE\tPORT\tTARGET\tPROTO\tALLOCATED\n'
 jq -sr 'add | sort_by(.example, .service, .port)[] |

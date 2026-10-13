@@ -113,6 +113,9 @@ prepare_ports () {
         roles+=("${other[@]}")
         popd > /dev/null || return 1
     done
+    # A role may be in both roles (published) and reserved (pre-reserved);
+    # one already set non-zero is pinned and wins over ephemeral allocation
+    # and pre-reservation.
     for role in $(printf '%s\n' "${roles[@]}" | sort -u); do
         [[ -n "$role" ]] || continue
         if _is_set "$role" && [[ "${!role}" != 0 ]]; then
