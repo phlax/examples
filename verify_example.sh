@@ -2,6 +2,7 @@
 
 EXAMPLE_NAME="${1}"
 EXAMPLE_DIR="${2}"
+CHECK_PORT_MANIFESTS="${TEST_SRCDIR}/${3}"
 # $HOME may be unset (or read-only) under `bazel test`
 WORKDIR="${TEST_TMPDIR:-${HOME:-/tmp}}"
 TMPOUT=$(mktemp -p "${WORKDIR}")
@@ -37,6 +38,7 @@ complete () {
     local trapcode=$? exitcode
     set +e
     exitcode="$(tail -n 1 "${TMPOUT}" | grep -oP '(?<=COMMAND_EXIT_CODE=")[0-9]+')"
+    [[ "$trapcode" == 0 || "$exitcode" != 0 ]] || exitcode="$trapcode"
     echo "${EXAMPLE_NAME}: ${exitcode}:${TIME}"
     tail -n 1 "$TMPOUT"
     echo
@@ -78,3 +80,4 @@ verify () {
 trap complete EXIT
 
 TIME=$({ time verify; } 2>&1 | grep real | cut -dl -f2)
+"$CHECK_PORT_MANIFESTS" "$PORT_MANIFEST_DIR"/*.ports.json

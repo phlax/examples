@@ -92,21 +92,12 @@ jobs:
         export UID
         printf '%s\n' 'common --config=ci' >> repo.bazelrc
         docker compose run --quiet --quiet-pull --quiet-build examples bash -c '
-          bazel test ${BAZEL_BUILD_EXTRA_OPTIONS} --config=examples \
-              --keep_going --test_output=errors \
-              //:verify_examples
+          bazel test ${BAZEL_BUILD_EXTRA_OPTIONS} --config=examples //:verify_examples --test_output=errors
           result=$?
           mkdir -p port-manifests
-          shopt -s nullglob
-          cp -L bazel-testlogs/*_result/test.outputs/*.ports.json port-manifests/ || true
-          for z in bazel-testlogs/*_result/test.outputs/outputs.zip; do
-              unzip -qo "$z" "*.ports.json" -d port-manifests/ || true
-          done
-          shopt -u nullglob
+          cp bazel-testlogs/*_result/test.outputs/*.ports.json port-manifests/ 2>/dev/null || true
           [[ "$result" == 0 ]] || exit "$result"
-          tools/check_port_manifests.sh port-manifests || exit 1
-          bazel test ${BAZEL_BUILD_EXTRA_OPTIONS} --config=examples //:port_collision_test \
-              --test_output=errors --nocache_test_results
+          bazel test ${BAZEL_BUILD_EXTRA_OPTIONS} --config=examples //:port_collision_test --test_output=errors --nocache_test_results
         '
       working-directory: examples
       env:

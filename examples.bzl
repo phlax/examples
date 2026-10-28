@@ -86,8 +86,15 @@ def envoy_examples(examples):
         sh_test(
             name = "%s_result" % example,
             srcs = [":verify_example.sh"],
-            args = [example, "$(location :%s_dir)" % example],
-            data = [":%s_dir" % example],
+            args = [
+                example,
+                "$(location :%s_dir)" % example,
+                "$(rootpath tools/check_port_manifests.sh)",
+            ],
+            data = [
+                ":%s_dir" % example,
+                "tools/check_port_manifests.sh",
+            ],
             env = {"BUILDX_BAKE_ENTITLEMENTS_FS": "0"},
             tags = ["requires-docker", "no-sandbox", "no-remote-exec", "local"],
             size = "large",
