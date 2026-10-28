@@ -2,7 +2,7 @@
 
 EXAMPLE_NAME="${1}"
 EXAMPLE_DIR="${2}"
-CHECK_PORT_MANIFESTS="${TEST_SRCDIR}/${3}"
+CHECK_PORT_MANIFESTS="${TEST_SRCDIR}/${TEST_WORKSPACE}/${3}"
 # $HOME may be unset (or read-only) under `bazel test`
 WORKDIR="${TEST_TMPDIR:-${HOME:-/tmp}}"
 TMPOUT=$(mktemp -p "${WORKDIR}")
@@ -48,7 +48,6 @@ complete () {
     fi
     echo
     echo
-    merge_manifests || true
     rm -rf "$RUNDIR"
     rm -rf "$TMPOUT"
     [[ -n "${CLEANUP_MANIFESTS:-}" ]] && rm -rf "$PORT_MANIFEST_DIR"
@@ -80,4 +79,8 @@ verify () {
 trap complete EXIT
 
 TIME=$({ time verify; } 2>&1 | grep real | cut -dl -f2)
-"$CHECK_PORT_MANIFESTS" "$PORT_MANIFEST_DIR"/*.ports.json
+merge_manifests
+MERGED_MANIFEST="${TEST_UNDECLARED_OUTPUTS_DIR:-${PORT_MANIFEST_DIR}}/${EXAMPLE_NAME}.ports.json"
+if jq -e 'length > 0' "$MERGED_MANIFEST" > /dev/null; then
+    "$CHECK_PORT_MANIFESTS" "$MERGED_MANIFEST"
+fi

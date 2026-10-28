@@ -96,7 +96,7 @@ def envoy_examples(examples):
                 "tools/check_port_manifests.sh",
             ],
             env = {"BUILDX_BAKE_ENTITLEMENTS_FS": "0"},
-            tags = ["requires-docker", "no-sandbox", "no-remote-exec", "local"],
+            tags = ["requires-docker", "no-sandbox", "no-remote-exec", "local", "external"],
             size = "large",
             timeout = "long",
             target_compatible_with = select({
