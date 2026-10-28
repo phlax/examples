@@ -1,4 +1,3 @@
-load("@bazel_skylib//lib:shell.bzl", "shell")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
@@ -33,25 +32,23 @@ def _example_runner_impl(ctx):
         for f in target[DefaultInfo].files.to_list()
         if f.basename.endswith(ctx.attr.suffix)
     ]
-    out = ctx.actions.declare_file(ctx.label.name + ".sh")
-    ctx.actions.write(
-        out,
-        "#!/bin/bash -e\nexec {} {} \"$@\"\n".format(
-            shell.quote(ctx.executable.runner.short_path),
-            " ".join([shell.quote(f.short_path) for f in inputs]),
-        ),
-        is_executable = True,
+    out = ctx.actions.declare_file(ctx.label.name + ".txt")
+    ctx.actions.run_shell(
+        inputs = inputs + [ctx.file.runner],
+        outputs = [out],
+        command = '"$1" "${@:3}" 2>&1 | tee "$2"; exit "${PIPESTATUS[0]}"',
+        arguments = [ctx.file.runner.path, out.path] + [f.path for f in inputs],
+        mnemonic = "ExampleRunner",
+        progress_message = "Running %s" % ctx.label.name,
+        execution_requirements = {"no-remote-exec": "1", "no-cache": "1"},
     )
-    runfiles = ctx.runfiles(files = inputs + [ctx.executable.runner])
-    runfiles = runfiles.merge(ctx.attr.runner[DefaultInfo].default_runfiles)
-    return [DefaultInfo(executable = out, runfiles = runfiles)]
+    return [DefaultInfo(files = depset([out]))]
 
 example_runner = rule(
     implementation = _example_runner_impl,
-    executable = True,
     attrs = {
         "outputs": attr.label_keyed_string_dict(allow_files = True),
-        "runner": attr.label(executable = True, cfg = "target"),
+        "runner": attr.label(allow_single_file = True),
         "suffix": attr.string(mandatory = True),
         "_exclude": attr.label(default = Label("//:exclude")),
     },
@@ -151,26 +148,16 @@ def envoy_examples(examples):
 
     results = {":%s_result" % example: example for example in examples}
 
-    sh_binary(
-        name = "verify_examples_sh",
-        srcs = [":verify_examples.sh"],
-    )
-
     example_runner(
         name = "verify_examples",
-        runner = ":verify_examples_sh",
+        runner = ":verify_examples.sh",
         outputs = results,
         suffix = "_result.txt",
     )
 
-    sh_binary(
-        name = "check_example_ports_sh",
-        srcs = ["tools/check_port_manifests.sh"],
-    )
-
     example_runner(
         name = "check_example_ports",
-        runner = ":check_example_ports_sh",
+        runner = "tools/check_port_manifests.sh",
         outputs = results,
         suffix = ".ports.json",
     )

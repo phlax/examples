@@ -3,7 +3,12 @@ load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 def _exclusion_test_impl(ctx):
     env = analysistest.begin(ctx)
     target = analysistest.target_under_test(env)
-    files = target[DefaultInfo].default_runfiles.files if ctx.attr.runfiles else target[DefaultInfo].files
+    if ctx.attr.action_inputs:
+        actions = analysistest.target_actions(env)
+        asserts.equals(env, 1, len(actions))
+        files = actions[0].inputs
+    else:
+        files = target[DefaultInfo].files
     paths = [f.short_path for f in files.to_list()]
     for included in ctx.attr.included:
         asserts.true(env, any([included in path for path in paths]), "Missing " + included)
@@ -14,7 +19,7 @@ def _exclusion_test_impl(ctx):
 _attrs = {
     "excluded": attr.string_list(),
     "included": attr.string_list(),
-    "runfiles": attr.bool(),
+    "action_inputs": attr.bool(),
 }
 
 _default_test = analysistest.make(_exclusion_test_impl, attrs = _attrs)
@@ -60,8 +65,8 @@ def example_exclusion_test_suite(name):
     tests.append(test_name)
 
     for target, suffix, other_suffix, runner in [
-        ("verify_examples", "_result.txt", ".ports.json", "verify_examples_sh"),
-        ("check_example_ports", ".ports.json", "_result.txt", "check_example_ports_sh"),
+        ("verify_examples", "_result.txt", ".ports.json", "verify_examples.sh"),
+        ("check_example_ports", ".ports.json", "_result.txt", "check_port_manifests.sh"),
     ]:
         for mode, test_rule, included, excluded in [
             ("default", _default_test, ["brotli" + suffix], ["ai-transcoder" + suffix]),
@@ -73,7 +78,7 @@ def example_exclusion_test_suite(name):
             test_rule(
                 name = test_name,
                 target_under_test = ":" + target,
-                runfiles = True,
+                action_inputs = True,
                 included = included + [runner],
                 excluded = excluded + [other_suffix],
             )
