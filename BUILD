@@ -189,12 +189,12 @@ pkg_tar(
     srcs = [":examples_files"],
     extension = "tar.gz",
     package_dir = "start/sandboxes",
+    visibility = ["//visibility:public"],
     deps = [
         ":examples_docs",
         "@envoy-example-filter-cc//:includes",
         "@envoy-example-wasm-cc//:includes",
     ],
-    visibility = ["//visibility:public"],
 )
 
 yq(
@@ -209,8 +209,8 @@ yq(
         "@envoy-example-filter-cc//:compose_files",
         "@envoy-example-wasm-cc//:compose_files",
     ],
-    expression = '{"file": filename, "config": .} as $item ireduce ({}; . * {($item.file): $item.config})',
     args = ["-o=json"],
+    expression = '{"file": filename, "config": .} as $item ireduce ({}; . * {($item.file): $item.config})',
 )
 
 jq(
@@ -226,18 +226,27 @@ build_test(
 
 sh_test(
     name = "port_collision_test",
+    timeout = "long",
     srcs = ["tools/port_collision_test.sh"],
     args = ["$(location :gzip_dir)"],
     data = [":gzip_dir"],
     env = {"BUILDX_BAKE_ENTITLEMENTS_FS": "0"},
-    tags = ["manual", "requires-docker", "no-sandbox", "no-remote-exec"],
-    timeout = "long",
+    tags = [
+        "manual",
+        "no-remote-exec",
+        "no-sandbox",
+        "requires-docker",
+    ],
 )
 
 sh_test(
     name = "check_example_ports",
     srcs = ["tools/check_port_manifests.sh"],
-    tags = ["local", "no-sandbox", "manual"],
+    tags = [
+        "local",
+        "manual",
+        "no-sandbox",
+    ],
 )
 
 sh_test(
@@ -245,15 +254,22 @@ sh_test(
     srcs = ["tools/port_harness_test.sh"],
     args = ["$(location :compose_ports_json)"],
     data = [
-        ":compose_ports_json",
-        "verify-common.sh",
         "tools/check_port_manifests.sh",
         "tools/lint_ports.jq",
+        "verify-common.sh",
+        ":compose_ports_json",
     ],
 )
 
 envoy_examples(
     examples = EXAMPLE_TESTS,
+)
+
+# Let analysis tests inspect excluded targets without being skipped themselves.
+platform(
+    name = "example_exclusion_test_platform",
+    constraint_values = ["@platforms//:incompatible"],
+    parents = ["@platforms//host"],
 )
 
 example_exclusion_test_suite(name = "example_exclusion_tests")

@@ -23,37 +23,6 @@ example_files = rule(
     },
 )
 
-def _example_runner_impl(ctx):
-    excluded = ctx.attr._exclude[BuildSettingInfo].value
-    inputs = [
-        f
-        for target, example in ctx.attr.outputs.items()
-        if example not in excluded
-        for f in target[DefaultInfo].files.to_list()
-        if f.basename.endswith(ctx.attr.suffix)
-    ]
-    out = ctx.actions.declare_file(ctx.label.name + ".txt")
-    ctx.actions.run_shell(
-        inputs = inputs + [ctx.file.runner],
-        outputs = [out],
-        command = '"$1" "${@:3}" 2>&1 | tee "$2"; exit "${PIPESTATUS[0]}"',
-        arguments = [ctx.file.runner.path, out.path] + [f.path for f in inputs],
-        mnemonic = "ExampleRunner",
-        progress_message = "Running %s" % ctx.label.name,
-        execution_requirements = {"no-remote-exec": "1", "no-cache": "1"},
-    )
-    return [DefaultInfo(files = depset([out]))]
-
-example_runner = rule(
-    implementation = _example_runner_impl,
-    attrs = {
-        "outputs": attr.label_keyed_string_dict(allow_files = True),
-        "runner": attr.label(allow_single_file = True),
-        "suffix": attr.string(mandatory = True),
-        "_exclude": attr.label(default = Label("//:exclude")),
-    },
-)
-
 def envoy_example(name, shared = ":shared_files", common_fun = ":verify-common.sh"):
     native.filegroup(
         name = "%s_files" % name,
@@ -110,6 +79,10 @@ def envoy_examples(examples):
 
     for example in examples:
         envoy_example(name = example, shared = ":shared_files")
+        native.config_setting(
+            name = "%s_excluded" % example,
+            flag_values = {"//:exclude": example},
+        )
         sh_test(
             name = "%s_result" % example,
             srcs = [":verify_example.sh"],
@@ -119,6 +92,10 @@ def envoy_examples(examples):
             tags = ["requires-docker", "no-sandbox", "no-remote-exec", "local"],
             size = "large",
             timeout = "long",
+            target_compatible_with = select({
+                ":%s_excluded" % example: ["@platforms//:incompatible"],
+                "//conditions:default": [],
+            }),
         )
 
     native.test_suite(
