@@ -97,11 +97,14 @@ jobs:
               //:verify_examples
           result=$?
           mkdir -p port-manifests
+          shopt -s nullglob
+          cp -L bazel-testlogs/*_result/test.outputs/*.ports.json port-manifests/ || true
           for z in bazel-testlogs/*_result/test.outputs/outputs.zip; do
-              [[ -f "$z" ]] && unzip -qo "$z" '"'"'*.ports.json'"'"' -d port-manifests/ || true
+              unzip -qo "$z" "*.ports.json" -d port-manifests/ || true
           done
+          shopt -u nullglob
           [[ "$result" == 0 ]] || exit "$result"
-          tools/check_port_manifests.sh port-manifests/*.ports.json || exit 1
+          tools/check_port_manifests.sh port-manifests || exit 1
           bazel test ${BAZEL_BUILD_EXTRA_OPTIONS} --config=examples //:port_collision_test \
               --test_output=errors --nocache_test_results
         '
