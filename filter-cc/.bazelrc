@@ -1,7 +1,7 @@
 common --color=yes
 
 common --registry=https://bcr.bazel.build/
-common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/5db29c09de17218d24f58c665be38208284754d8
+common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/aa6872f9f5eb1aca4619604076dad21c1b95564b
 
 build --@rules_rust//rust/settings:extra_exec_rustc_flags=-Clink-self-contained=no
 
